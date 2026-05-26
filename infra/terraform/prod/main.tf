@@ -18,8 +18,8 @@ terraform {
 # ==============================================
 # Provider
 # ==============================================
+
 provider "aws" {
-  alias  = "east"
   region = var.region_east
 }
 
@@ -45,7 +45,7 @@ module "eks_east" {
   source           = "../modules/eks"
 
   cluster_name     = "marriott-${var.environment}-east-cluster"
-  cluster_version  = "1.33"
+  cluster_version  = "1.30"
   vpc_id           = module.vpc_east.vpc_id
   subnet_ids       = module.vpc_east.private_subnet_ids
   instance_types   = var.instance_types
@@ -79,7 +79,7 @@ module "redis_east" {
 # ==============================================
 module "vpc_west" {
   source          = "../modules/vpc"
-
+  providers       = {aws = aws.west}
   vpc_cidr        = var.vpc_cidr_west
   environment     = var.environment
   azs             = var.azs_west
@@ -89,7 +89,7 @@ module "vpc_west" {
 
 module "eks_west" {
   source           = "../modules/eks"
-
+  providers       = {aws = aws.west}
   cluster_name     = "marriott-${var.environment}-west-cluster"
   cluster_version  = "1.30"
   vpc_id           = module.vpc_west.vpc_id
@@ -104,7 +104,7 @@ module "eks_west" {
 
 module "rds_west" {
   source      = "../modules/rds"
-
+  providers   = {aws = aws.west}
   identifier  = "marriott-${var.environment}-west-db"
   vpc_id      = module.vpc_west.vpc_id
   subnet_ids  = module.vpc_west.private_subnet_ids
@@ -113,7 +113,7 @@ module "rds_west" {
 
 module "redis_west" {
   source      = "../modules/redis"
-
+  providers   = {aws = aws.west}
   name        = "marriott-${var.environment}-west-redis"
   vpc_id      = module.vpc_west.vpc_id
   subnet_ids  = module.vpc_west.private_subnet_ids
