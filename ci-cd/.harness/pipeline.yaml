@@ -3,12 +3,17 @@ pipeline:
   identifier: app_cicd_pipeline
   orgIdentifier: default
   projectIdentifier: infraterraform
-
   stages:
     - stage:
         name: Build_Backend_Frontend
         identifier: Build_Images
         type: CI
+        failureStrategies:
+          - onFailure:
+              errors:
+                - AllErrors
+              action:
+                type: Abort
         spec:
           execution:
             steps:
@@ -27,7 +32,6 @@ pipeline:
                     dockerfile: app/backend/Dockerfile
                     context: app/backend/
                     timeout: 10m
-
               - step:
                   name: Build_Push_Frontend
                   identifier: build_push_frontend
@@ -43,16 +47,34 @@ pipeline:
                     dockerfile: app/frontend/Dockerfile
                     context: app/frontend/
                     timeout: 10m
-
+          infrastructure:
+            type: KubernetesDirect
+            spec:
+              connectorRef: eksdevcluster
+              namespace: harness-delegate-ng
+              automountServiceAccountToken: true
+              nodeSelector: {}
+              harnessImageConnectorRef: account.harnessImage
+              os: Linux
     - stage:
         name: Deploy_To_EKS
         identifier: Deploy_K8s
         type: Deployment
+        failureStrategies:
+          - onFailure:
+              errors:
+                - AllErrors
+              action:
+                type: MarkAsFailure
         spec:
           deploymentType: Kubernetes
+          environment:
+            environmentRef: dev_env
+            deployToAll: false
+            infrastructureDefinitions:
+              - identifier: eksdevinfra
           service:
             serviceRef: app_service
-          environmentRef: prod_env
           execution:
             steps:
               - step:
@@ -60,6 +82,8 @@ pipeline:
                   identifier: deploy_kustomize
                   type: K8sApply
                   spec:
+                    filePaths:
+                      - kustomization.yaml
                     delegateSelectors:
                       - docker-delegate
                     manifests:
@@ -75,8 +99,9 @@ pipeline:
                                 branch: main
                                 folderPath: k8s/
                     timeout: 10m
-
+            rollbackSteps: []
   variables:
     - name: AWS_ACCOUNT_ID
       type: String
       value: "790779513290"
+
