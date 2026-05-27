@@ -1,0 +1,17 @@
+service:
+  name: full-app
+  identifier: full_app
+  orgIdentifier: default
+  projectIdentifier: infraterraform
+  serviceDefinition:
+    type: Kubernetes
+    spec:
+      artifacts:
+        - primary:
+            type: Docker
+            spec:
+              image: ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/backend:${BUILD_ID}
+        - secondary:
+            type: Docker
+            spec:
+              image: ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/frontend:${BUILD_ID}

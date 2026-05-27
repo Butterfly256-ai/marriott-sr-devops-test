@@ -1,0 +1,79 @@
+pipeline:
+  name: app-cicd-pipeline
+  identifier: app_cicd_pipeline
+  orgIdentifier: default
+  projectIdentifier: infraterraform
+
+  stages:
+    - stage:
+        name: Build_Backend_Frontend
+        identifier: Build_Images
+        type: CI
+        spec:
+          execution:
+            steps:
+              - step:
+                  name: Build_Push_Backend
+                  identifier: build_push_backend
+                  type: BuildAndPushDockerRegistry
+                  spec:
+                    delegateSelectors: [docker-delegate]
+                    connectorRef: aws_ecr_conn
+                    repo: ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/backend
+                    tags:
+                      - ${BUILD_ID}
+                      - latest
+                    dockerfile: app/backend/Dockerfile
+                    context: app/backend/
+                    timeout: 10m
+
+              - step:
+                  name: Build_Push_Frontend
+                  identifier: build_push_frontend
+                  type: BuildAndPushDockerRegistry
+                  spec:
+                    delegateSelectors: [docker-delegate]
+                    connectorRef: aws_ecr_conn
+                    repo: ${AWS_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/frontend
+                    tags:
+                      - ${BUILD_ID}
+                      - latest
+                    dockerfile: app/frontend/Dockerfile
+                    context: app/frontend/
+                    timeout: 10m
+
+    # deployig  EKS
+    - stage:
+        name: Deploy_To_EKS
+        identifier: Deploy_K8s
+        type: Deployment
+        spec:
+          deploymentType: Kubernetes
+          service:
+            serviceRef: app_service
+            environmentRef: prod_env
+          execution:
+            steps:
+              - step:
+                  name: Deploy_Kustomize
+                  identifier: deploy_kustomize
+                  type: K8sApply
+                  spec:
+                    delegateSelectors: [docker-delegate]
+                    manifests:
+                      - manifest:
+                          identifier: k8s-app
+                          type: Kustomize
+                          spec:
+                            store:
+                              type: GitHub
+                              spec:
+                                connectorRef: gitterraform
+                                repoName: marriott-sr-devops-test
+                                branch: main
+                                folderPath: k8s/
+                    timeout: 10m
+  variables:
+    - name: AWS_ACCOUNT_ID
+      type: String
+      value: 7907-7951-3290
