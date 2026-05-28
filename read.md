@@ -9,30 +9,37 @@ This project is a web application consisting of two core service modules:
 
 Both services are containerized and deployed on Kubernetes, with independent scaling policies to ensure service elasticity.
 
-### 1.2 Architecture Diagram
-```mermaid
-flowchart LR
-    User[End User] -->|HTTP/HTTPS| Ingress[K8s Ingress]
-    Ingress --> FrontendSvc[Frontend Service]
-    Ingress --> BackendSvc[Backend Service]
-
-    subgraph Kubernetes Workloads
-        FrontendSvc --> PodF1[Frontend Pod 1]
-        FrontendSvc --> PodF2[Frontend Pod 2]
-        BackendSvc --> PodB1[Backend Pod 1]
-        BackendSvc --> PodB2[Backend Pod 2]
-    end
-
-    FrontendSvc -.->|API Request| BackendSvc
-
-    subgraph Resilience
-        HPA_F[HPA - Frontend] -.-> AutoScaleF[Auto Scale Pods]
-        HPA_B[HPA - Backend] -.-> AutoScaleB[Auto Scale Pods]
-    end
-
-### 1.3 Key Components Description
+### 1.2 Key Components Description
 - **Ingress**: Unified traffic entry, route requests to corresponding frontend/backend services.
 - **Frontend Service**: Stateless web frontend, multiple Pod replicas for high availability.
 - **Backend Service**: Stateless API backend, provides core business capabilities.
 - **HPA (Horizontal Pod Autoscaler)**: Automatically adjust Pod replicas based on CPU/memory usage to handle traffic fluctuations.
-- **ConfigMap & Secret**: Store application configuration, environment variables and sensitive credentials separately.
+
+## 2. Infrastructure Design & Diagram
+
+### 2.1 Infrastructure Overview
+The whole infrastructure is built on AWS EKS (Elastic Kubernetes Service). All resources are managed via IaC (Infrastructure as Code) and Kustomize, achieving environment consistency and repeatable deployment.
+
+### 2.3 Infrastructure Components
+- **AWS EKS**: Managed Kubernetes cluster, runs all application workloads.
+- **EC2 Node Group**: Compute nodes of EKS, host all application Pods.
+- **Amazon ECR**: Private container registry, stores built Frontend/Backend Docker images.
+- **IAM**: AWS identity & access management, control permissions for ECR image pull/push and EKS cluster access.
+- **Harness Delegate**: Execution agent deployed inside the environment, responsible for pipeline running, cluster operation and image management.
+- **Kubernetes Resources**: Service, Ingress, Deployment, HPA, ConfigMap, Secret for application runtime.
+
+
+## 3 CI/CD Pipeline Design 
+### 3.1 Pipeline Workflow Overview
+The end-to-end CI/CD pipeline is implemented based on Harness CI/CD, covering code pull → image build & push → Kubernetes deployment. All deployment manifests are managed by Kustomize.
+
+### 3.3 Pipeline Stage & Step Details
+#### Stage 1: CI - Build_Backend_Frontend
+- **Checkout Code**: Pull latest source code from GitHub repository.
+- **Build & Push Backend**: Build backend Docker image, tag with pipeline sequence ID + latest, push to AWS ECR.
+- **Build & Push Frontend**: Build frontend Docker image, tag with pipeline sequence ID + latest, push to AWS ECR.
+
+#### Stage 2: CD - Deploy_To_EKS
+- **Load Kustomize Manifests**: Parse and render Kubernetes manifests via Kustomize.
+- **K8s Apply**: Deploy all resources (Deployment, Service, Ingress, HPA, ConfigMap, Secret) to EKS cluster.
+- **Steady State Check**: Verify all Pods and workloads are running normally.
