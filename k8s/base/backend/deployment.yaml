@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: backend
-        image: backend:latest
+        image: 790779513290.dkr.ecr.us-east-1.amazonaws.com/backend:<+pipeline.sequenceId>
         ports:
         - containerPort: 5000
         envFrom:

@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: frontend:latest
+        image: 790779513290.dkr.ecr.us-east-1.amazonaws.com/frontend:<+pipeline.sequenceId>
         ports:
         - containerPort: 80
         resources:
