@@ -20,7 +20,7 @@ Both services are containerized and deployed on Kubernetes, with independent sca
 ### 2.1 Infrastructure Overview
 The whole infrastructure is built on AWS EKS (Elastic Kubernetes Service). All resources are managed via IaC (Infrastructure as Code) and Kustomize, achieving environment consistency and repeatable deployment.
 
-### 2.3 Infrastructure Components
+### 2.2 Infrastructure Components
 - **AWS EKS**: Managed Kubernetes cluster, runs all application workloads.
 - **EC2 Node Group**: Compute nodes of EKS, host all application Pods.
 - **Amazon ECR**: Private container registry, stores built Frontend/Backend Docker images.
@@ -33,7 +33,7 @@ The whole infrastructure is built on AWS EKS (Elastic Kubernetes Service). All r
 ### 3.1 Pipeline Workflow Overview
 The end-to-end CI/CD pipeline is implemented based on Harness CI/CD, covering code pull → image build & push → Kubernetes deployment. All deployment manifests are managed by Kustomize.
 
-### 3.3 Pipeline Stage & Step Details
+### 3.2 Pipeline Stage & Step Details
 #### Stage 1: CI - Build_Backend_Frontend
 - **Checkout Code**: Pull latest source code from GitHub repository.
 - **Build & Push Backend**: Build backend Docker image, tag with pipeline sequence ID + latest, push to AWS ECR.
